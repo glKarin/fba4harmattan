@@ -1,0 +1,38 @@
+fba (1.0.8harmattan6) stable; urgency=low
+
+  * add color feedback when virtual buttons pressed.
+  * optimize source code of virtual buttons and virtual joystick.
+  * repaire virtual joystick motion event listener.
+
+ -- Karin Zhao <beyondk2000@gmail.com>  Wed, 5 Nov 2014 21:04:15 +0800
+
+fba (1.0.8harmattan5) unstable; urgency=low
+
+  * virtual buttons surface transparent.
+
+ -- Karin Zhao <beyondk2000@gmail.com>  Fri, 1 Nov 2014 20:18:20 +0800
+
+fba (1.0.8harmattan4) unstable; urgency=low
+
+  * change navi buttons to joystick circle.
+
+ -- Karin Zhao <beyondk2000@gmail.com>  Set, 30 Oct 2014 13:20:04 +0800
+
+fba (1.0.8harmattan3) unstable; urgency=low
+
+  * change virtual buttons layout.
+
+ -- Karin Zhao <beyondk2000@gmail.com>  Mon, 27 Oct 2014 7:22:23 +0800
+
+fba (1.0.8harmattan2) unstable; urgency=low
+
+  * add virtual butttons by polling mouse click event and mouse motion event.
+
+ -- Karin Zhao <beyondk2000@gmail.com>  Sun, 19 Oct 2014 7:26:15 +0800
+
+fba (1.0.8-1) unstable; urgency=low
+
+  * updated to match 1.0.8 from the pandora
+
+ -- Your Name <jfk@tpg.com.au>  Sat, 31 Mar 2012 10:19:05 -0400
+
