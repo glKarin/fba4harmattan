@@ -12,11 +12,12 @@ LD = g++
 WINDRES = windres
 
 INC =  -I.. -I. -I../.. -Isrc/burner -Isrc/burner/sdl -Isrc/burn/drv -Isrc/burn/snd -Isrc/burn/devices -Isrc/burn -Isrc/intf/video/sdl -Isrc/intf/video -Isrc/intf/perfcount -Isrc/intf/input/sdl -Isrc/intf/input -Isrc/intf/cd -Isrc/intf/audio/sdl -Isrc/intf/audio -Isrc/intf -I../sdl -Isrc/cpu -Isrc/cpu/z80 -Isrc/cpu/sh2 -Isrc/cpu/s2650 -Isrc/cpu/nec -Isrc/cpu/m6809 -Isrc/cpu/m6805 -Isrc/cpu/m6800 -Isrc/cpu/m6502 -Isrc/cpu/m68k -Isrc/cpu/konami -Isrc/cpu/i8039 -Isrc/cpu/hd6309 -Isrc/cpu/h6280 -Isrc/cpu/arm7 -Isrc/cpu/arm -Isrc/burn/drv/toaplan -Isrc/burn/drv/taito -Isrc/burn/drv/snes -Isrc/burn/drv/sega -Isrc/burn/drv/pst90s -Isrc/burn/drv/psikyo -Isrc/burn/drv/pre90s -Isrc/burn/drv/pgm -Isrc/burn/drv/neogeo -Isrc/burn/drv/megadrive -Isrc/burn/drv/konami -Isrc/burn/drv/irem -Isrc/burn/drv/galaxian -Isrc/burn/drv/dataeast -Isrc/burn/drv/cps3 -Isrc/burn/drv/cave -Isrc/burn/drv/capcom -Isrc/cpu/cyclone -Isrc/cpu/drz80 -Isrc/burner/win32 -Isrc/intf/video/scalers -Isrc -Isrc/cpu/davez80 -Isrc/burn/drv/pce
-CFLAGS =  -march=armv7-a -mtune=cortex-a8 -finline -finline-functions -DBUILD_SDL -DLSB_FIRST -DEMU_C68K
+CFLAGS =  -march=armv7-a -mtune=cortex-a8 -finline -finline-functions -DBUILD_SDL -DLSB_FIRST -DEMU_C68K -D_HARMATTAN
 RESINC = 
 LIBDIR =  -L/usr/lib
 LIB =  -lSDL_image -lSDL_mixer -lz -lpthread -lSDL -lSDL_net -lpng 
 LDFLAGS = 
+#DEFINES = -D_IN_QFBACAPEX
 
 INC_RELEASE =  $(INC)
 CFLAGS_RELEASE =  $(CFLAGS) -O2 -w -mfpu=neon -mfloat-abi=softfp

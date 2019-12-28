@@ -43,6 +43,15 @@ extern "C"
 CFG_OPTIONS config_options;
 CFG_KEYMAP config_keymap;
 
+#ifdef _HARMATTAN
+KZ_GetOpt_t harm_options = {
+	0, 0, 0, 0,
+	NULL, NULL, NULL,
+
+	NULL
+};
+#endif
+
 char szAppBurnVer[16];
 
 char nub0[11];
@@ -106,6 +115,18 @@ void parse_cmd(int argc, char *argv[], char *path)
 		{"filter", required_argument, 0, 's'},
 		{"z80core", required_argument, 0, 'z'},
 		{"frontend", required_argument, 0, 'f'}
+#ifdef _HARMATTAN
+		,
+		{"harm-layout", required_argument, NULL, 'L'},
+		{"harm-debug", optional_argument, NULL, 'D'},
+		{"harm-joystick-mode", required_argument, NULL, 'J'},
+		{"harm-show-2p", no_argument, NULL, 'P'},
+		{"harm-BIOS", required_argument, NULL, 'B'},
+		{"harm-state", required_argument, NULL, 'S'},
+		{"harm-DIP", required_argument, NULL, 'I'},
+
+		{NULL, 0, NULL, 0}
+#endif
 	};
 
 	option_index=optind=0;
@@ -129,9 +150,21 @@ void parse_cmd(int argc, char *argv[], char *path)
 				break;
             case 'a':
 				if(!optarg) continue;
-				z2=0;
+				z2=
+#ifdef _HARMATTAN
+					3
+#else
+					0
+#endif
+					;
 				sscanf(optarg,"%d",&z2);
-				if ((z2>3) || (z2<0)) z2=0;
+				if ((z2>3) || (z2<0)) z2=
+#ifdef _HARMATTAN
+					3
+#else
+					0
+#endif
+					;
 				config_options.option_rescale = z2;
 				break;
             case 'o':
@@ -174,6 +207,46 @@ void parse_cmd(int argc, char *argv[], char *path)
 				else
 					strcpy(config_options.option_frontend, optarg);
 				break;
+#ifdef _HARMATTAN
+			case 'L': {
+									if(!optarg) continue;
+									harm_options.layout = atoi(optarg);
+									if(harm_options.layout < 0 || harm_options.layout > 2)
+										harm_options.layout = 0;
+								}
+				break;
+			case 'D': {
+									if(!optarg) continue;
+									harm_options.debug = atoi(optarg);
+								}
+				break;
+			case 'J': {
+									if(!optarg) continue;
+									harm_options.joystick_mode = atoi(optarg);
+									if(harm_options.joystick_mode < 0 || harm_options.joystick_mode > 2)
+										harm_options.joystick_mode = 0;
+								}
+				break;
+			case 'P': {
+									harm_options.show_2p = true;
+								}
+				break;
+			case 'B': {
+									if(!optarg) continue;
+									harm_options.BIOS = strdup(optarg);
+								}
+				break;
+			case 'S': {
+									if(!optarg) continue;
+									harm_options.state_path = strdup(optarg);
+								}
+				break;
+			case 'I': {
+									if(!optarg) continue;
+									harm_options.dip_setting = strdup(optarg);
+								}
+				break;
+#endif
 		}
 	}
 
@@ -211,6 +284,56 @@ char path[MAX_PATH];
 			}
 		}
 		printf ("\n\n");
+
+#ifdef _HARMATTAN
+		printf("\nGeneral arguments\n\n");
+
+		printf("    --sound-sdl : Enable sound with SDL. Default.\n");
+		printf("    --sound-dsp : Enable sound with DSP\n");
+		printf("    --no-sound : No sound\n");
+		printf("    --samplerate=<11025, 22050, 44100> : Audio sample rate. Default 0.\n");
+		printf("    --clock=<number> : FBA2X clock\n");
+		printf("    --scaling=<0, 1, 2, 3> : Scaling. Default 3.\n");
+		printf("                             0 - None.\n");
+		printf("                             1 - 2X.\n");
+		printf("                             2 - Best bit.\n");
+		printf("                             3 - Full. Default.\n");
+		printf("    --rotate=<0, 1, 2> : Rotate. Default 0.\n");
+		printf("                         0 - Auto. Default.\n");
+		printf("                         1 - Horizontal.\n");
+		printf("                         2 - Verticle.\n");
+		printf("    --sense=<10 - 100> : Analogue Sensitivity. Default 100.\n");
+		printf("    --showfps : Show FPS\n");
+		printf("    --no-showfps : Do not show FPS. Default.\n");
+		printf("    --create-lists : Create FBA rom list data file.\n");
+		printf("    --force-m68k : Force M68K.\n");
+		printf("    --force-c68k : Force Cyclone.\n");
+		printf("    --filter=<0, 1> : Unused.\n");
+		printf("                      0 - Default. Default.\n");
+		printf("                      1 - None.\n");
+		printf("    --z80core=<0, 1, 2> : Do not show FPS. Default 0.\n");
+		printf("                          0 - DR Z80. Default.\n");
+		printf("                          1 - C Z80.\n");
+		printf("    --frontend=<frontend executable file path> : Frontend application path\n");
+
+		printf("\nSpecial arguments on Harmattan\n\n");
+
+		printf("    --harm-layout=<0, 1, 2> : On-screen button layout on Harmattan. Default 0.\n");
+		printf("                              0 - portrait layout. Default.\n");
+		printf("                              1 - landscape layout.\n");
+		printf("                              2 - only ABCD.\n");
+		printf("    --harm-debug=<number> : Only for debug on Harmattan.\n");
+		printf("    --harm-joystick-mode=<0, 1, 2> : Joystick mode on Harmattan. Default 0.\n");
+		printf("                                     0 - joystick. Default.\n");
+		printf("                                     1 - circle.\n");
+		printf("                                     2 - button.\n");
+		printf("    --harm-show-2p : Show player 2 control buttons on Harmattan.\n");
+		printf("    --harm-BIOS=<BIOS name> : Set BIOS DIP on Harmattan.\n");
+		printf("    --harm-state=<state file path> : Set game state file on Harmattan.\n");
+		printf("                                     Default if not set, will using '~/.fba/states/<rom file name>_default_state.fs' file.\n");
+		printf("    --harm-DIP=<setting1=value1,setting2=value2,...> : Set DIP on Harmattan.\n");
+		printf("                                                       Format is 'setting_name=setting_value', split by ','.\n");
+#endif
 		return 0;
 	}
 
@@ -274,10 +397,22 @@ char path[MAX_PATH];
 */
 	//Initialize configuration options
 	config_options.option_sound_enable = 2;
-	config_options.option_rescale = 2;
+	config_options.option_rescale = 
+#ifdef _HARMATTAN
+		3
+#else
+		2
+#endif
+		;
 	config_options.option_rotate = 0;
 	config_options.option_samplerate = 0;
-	config_options.option_showfps = 1;
+	config_options.option_showfps = 
+#ifdef _HARMATTAN
+		0
+#else
+		1
+#endif
+		;
 	config_options.option_create_lists=0;
 	config_options.option_forcem68k=0;
 	config_options.option_forcec68k=0;
@@ -326,6 +461,13 @@ char path[MAX_PATH];
 	gp2x_terminate(config_options.option_frontend);
 
 */
+
+#ifdef _HARMATTAN
+		if(harm_options.BIOS) free(harm_options.BIOS);
+		if(harm_options.romname) free(harm_options.romname);
+		if(harm_options.state_path) free(harm_options.state_path);
+		if(harm_options.dip_setting) free(harm_options.dip_setting);
+#endif
 	return 0;
 }
 

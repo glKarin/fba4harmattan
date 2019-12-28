@@ -35,6 +35,14 @@ void uploadfb(void);
 void VideoBufferUpdate(void);
 void VideoTrans();
 
+#ifdef _HARMATTAN
+#define USING_INFOBANNER;
+#endif
+
+#ifdef USING_INFOBANNER
+int *harm_PhysicalBufferWidth_ptr = &PhysicalBufferWidth;
+#endif
+
 int RunReset()
 {
 /*	if (VideoBufferWidth == 384 && (config_options.option_rescale == 2 || VideoBufferHeight == 240))
@@ -245,6 +253,9 @@ int VideoInit()
     }
 
 
+#ifdef _HARMATTAN
+		bShowFPS = (bool)config_options.option_showfps;
+#endif
 	return 0;
 }
 

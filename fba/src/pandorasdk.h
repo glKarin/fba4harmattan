@@ -40,6 +40,9 @@
 #define MY_SELECT                     (16384)
 #define MY_PAUSE                    (32768)
 
+#ifdef _HARMATTAN
+#define KZ_SELECT (1 << 18)
+#endif
 
 
 enum{

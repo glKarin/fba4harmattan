@@ -44,4 +44,20 @@ typedef struct
 
 } CFG_KEYMAP;
 
+
+#ifdef _HARMATTAN
+typedef struct KZ_GetOpt_s
+{
+	int layout;
+	int debug;
+	int joystick_mode;
+	int show_2p;
+	char *BIOS;
+	char *state_path;
+	char *dip_setting;
+
+	char *romname;
+} KZ_GetOpt_t;
+#endif
+
 #endif

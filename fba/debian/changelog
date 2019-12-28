@@ -1,3 +1,16 @@
+fba (1.0.8harmattan2014-7) stable; urgency=low
+
+  * Support set BIOS with argument: --harm-BIOS=<BIOS name>. Like `AES Asia' for Home mode. All BIOS settings will shown on runtime output.
+  * Support quick save/load game state. With argument: --harm-state=<game state file path> to set your .fs file. Default state file is in `~/.fba/states/<rom_file_name>.fs'.
+  * Support set other DIP with argument: --harm-DIP=<setting1=value1[,setting2=value2,...]>. All DIP settings will shown on runtime output.
+  * Add player-2 control switcher. With argument: --harm-show-2p can show 2p mirror control switcher.
+  * Support joystick/button/circle control. With argument: --harm-joystick-mode=<0, 1 or 2>, default is 0 - joystick.
+  * Support 3 button layouts. With argument: --harm-layout=<0, 1 or 2>, default is 0 - vertical layout.
+  * Fixed show FPS. with argument: --show-fps to enable render FPS.
+  * Run fba and not set rom can show all help info text, and extras arguments is starts with `harm'.
+
+ -- Karin Zhao <beyondk2000@gmail.com>  Wed, 5 Nov 2014 21:04:15 +0800
+
 fba (1.0.8harmattan6) stable; urgency=low
 
   * add color feedback when virtual buttons pressed.

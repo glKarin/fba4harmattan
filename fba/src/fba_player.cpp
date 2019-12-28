@@ -50,6 +50,9 @@ extern int nAnalogSpeed;
 extern int ConfigAppLoad();
 extern int ConfigAppSave();
 
+extern char harm_CURRENT_PLAYER;
+extern char harm_CONTROL_TOGETHER;
+extern void harm_set_romname(const char *romname);
 
 extern "C"
 {
@@ -106,6 +109,16 @@ int joyMap[8] = {0x0040,0x0080,0x0100,0x0200,0x0400,0x0800,0x10,0x20};
 
 void do_keypad()
 {
+#define HARM_MAX_PLAYER 2 // 4
+	const int _harm_current_player = harm_CURRENT_PLAYER < 0 || harm_CURRENT_PLAYER >= HARM_MAX_PLAYER ? 0 : harm_CURRENT_PLAYER;
+	const int _harm_control_together = harm_CONTROL_TOGETHER < 0 || harm_CONTROL_TOGETHER > 2 ? 0 : harm_CONTROL_TOGETHER;
+	int _harm_player_pair[HARM_MAX_PLAYER] = {0, 1};
+	if(_harm_current_player == 1)
+	{
+		_harm_player_pair[0] = 1;
+		_harm_player_pair[1] = 0;
+	}
+
 	static unsigned int turbo = 0;
 	unsigned long joy = gp2x_joystick_read();
 	int bVert = ((BurnDrvGetFlags() & BDF_ORIENTATION_VERTICAL) && (config_options.option_rotate==1));
@@ -124,36 +137,51 @@ void do_keypad()
 	FBA_AXIS[0] [2]=SDL_JoystickGetAxis(0,2);
 	FBA_AXIS[0] [3]=SDL_JoystickGetAxis(0,3);*/
 
-	if ( joy & MY_UP  ) FBA_KEYPAD[0] |= bVert?0x0004:0x0001;
-	if ( joy & MY_DOWN  ) FBA_KEYPAD[0] |= bVert?0x0008:0x0002;
-	if ( joy & MY_LEFT  ) FBA_KEYPAD[0] |= bVert?0x0002:0x0004;
-	if ( joy & MY_RIGHT ) FBA_KEYPAD[0] |= bVert?0x0001:0x0008;
+	for(int i = 0; i < HARM_MAX_PLAYER; i++)
+#undef HARM_MAX_PLAYER
+	{
+		if(_harm_control_together == 0 && i > 0)
+			break;
 
-	if ( joy & MY_SELECT )	FBA_KEYPAD[0] |= 0x0010;
-	if ( joy & MY_START )		FBA_KEYPAD[0] |= 0x0020;
+		int player = _harm_player_pair[i];
+		bool n_mirrored = !(i > 0 && _harm_control_together == 1);
 
-	if ( joy & MY_BUTT_A )	FBA_KEYPAD[0] |= 0x0040;	// A
-	if ( joy & MY_BUTT_X )  FBA_KEYPAD[0] |= 0x0080;	// B
+#ifdef _HARMATTAN
+		if ( joy & KZ_SELECT )	FBA_KEYPAD[player] |= (1 << 18);
+#endif
+
+		if ( joy & MY_UP  ) FBA_KEYPAD[player] |= bVert?(n_mirrored ? 0x0004 : 0x0008):0x0001;
+		if ( joy & MY_DOWN  ) FBA_KEYPAD[player] |= bVert?(n_mirrored ? 0x0008 : 0x0004):0x0002;
+		if ( joy & MY_LEFT  ) FBA_KEYPAD[player] |= bVert?0x0002:(n_mirrored ? 0x0004 : 0x0008);
+		if ( joy & MY_RIGHT ) FBA_KEYPAD[player] |= bVert?0x0001:(n_mirrored ? 0x0008 : 0x0004);
+
+		if ( joy & MY_SELECT )	FBA_KEYPAD[player] |= 0x0010;
+		if ( joy & MY_START )		FBA_KEYPAD[player] |= 0x0020;
+
+		if ( joy & MY_BUTT_A )	FBA_KEYPAD[player] |= 0x0040;	// A
+		if ( joy & MY_BUTT_X )  FBA_KEYPAD[player] |= 0x0080;	// B
 		//if (bVert)
-			//ezx_change_volume(1);
+		//ezx_change_volume(1);
 		//else
-			//FBA_KEYPAD[0] |= 0x0080;	// B
-	if ( joy & MY_BUTT_B )	FBA_KEYPAD[0] |= 0x0100;	// C
-	if ( joy & MY_BUTT_Y ) FBA_KEYPAD[0] |= 0x0200;	// D
+		//FBA_KEYPAD[0] |= 0x0080;	// B
+		if ( joy & MY_BUTT_B )	FBA_KEYPAD[player] |= 0x0100;	// C
+		if ( joy & MY_BUTT_Y ) FBA_KEYPAD[player] |= 0x0200;	// D
 		//if (bVert)
-			//ezx_change_volume(-1);
+		//ezx_change_volume(-1);
 		//else
-//			FBA_KEYPAD[0] |= 0x0200;	// D
-	if ( joy & MY_BUTT_SL )	FBA_KEYPAD[0] |= 0x0400;						// E
+		//			FBA_KEYPAD[0] |= 0x0200;	// D
+		if ( joy & MY_BUTT_SL )	FBA_KEYPAD[player] |= 0x0400;						// E
 		//if (bVert)
-			//FBA_KEYPAD[0] |= 0x0100;
+		//FBA_KEYPAD[0] |= 0x0100;
 		//else
 		//	FBA_KEYPAD[0] |= 0x0400;
-	if ( joy & MY_BUTT_SR )	FBA_KEYPAD[0] |= 0x0800;						// F
+		if ( joy & MY_BUTT_SR )	FBA_KEYPAD[player] |= 0x0800;						// F
 		//if (bVert)
-			//FBA_KEYPAD[0] |= 0x0200;
+		//FBA_KEYPAD[0] |= 0x0200;
 		//else
-			//FBA_KEYPAD[0] |= 0x0800;
+		//FBA_KEYPAD[0] |= 0x0800;
+	}
+
 	/*if ( joy & MY_VOL_UP )
 		if (bVert)
 			FBA_KEYPAD[0] |= 0x0040;
@@ -570,7 +598,7 @@ void run_fba_emulator(const char *fn)
 
 	memset (titlefb, 0, fwidth*fheight*2);
 	DrawString ("Finalburn Alpha for Pandora (v 0.2.97.24)", titlefb, 10, 20, fwidth);
-	DrawString ("On MeeGo Harmattan Touch", titlefb, 10, 35, fwidth);
+	DrawString ("on MeeGo Harmattan Touch", titlefb, 10, 35, fwidth);
 	DrawString ("Based on FinalBurnAlpha", titlefb, 10, 50, fwidth);
 	DrawString ("Now loading ... ", titlefb, 10, 105, fwidth);
 	show_rom_loading_text("Open Zip", 0, 0);
@@ -578,6 +606,9 @@ void run_fba_emulator(const char *fn)
 
 	InpInit();
 	InpDIP();
+#ifdef _HARMATTAN
+	harm_set_romname(romname);
+#endif
 
 
 

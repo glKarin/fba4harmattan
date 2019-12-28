@@ -2,6 +2,8 @@
 #include "pandorasdk.h"
 #include "SDL/SDL.h"
 
+#include "config.h"
+
 extern SDL_Joystick *joys[4];
 extern char joyCount;
 extern unsigned char ServiceRequest;
@@ -89,6 +91,17 @@ int DoInputBlank(int /*bDipSwitch*/)
 		GameInp[iJoyNum][0].pVal = bii.pVal;
 		GameInp[iJoyNum][0].nType = bii.nType;
     }
+#ifdef _HARMATTAN
+		else
+		{
+			sprintf(controlName,"p%i select",iJoyNum+1);
+			if (strcmp(bii.szInfo, controlName) == 0)
+			{
+				GameInp[iJoyNum][MAX_INPUT_inp - 1].nBit = MAX_INPUT_inp - 1;
+				GameInp[iJoyNum][MAX_INPUT_inp - 1].pVal = bii.pVal;
+				GameInp[iJoyNum][MAX_INPUT_inp - 1].nType = bii.nType;
+			}
+#endif
     else {
 	sprintf(controlName,"p%i start",iJoyNum+1);
     if (strcmp(bii.szInfo, controlName) == 0)
@@ -254,6 +267,9 @@ int DoInputBlank(int /*bDipSwitch*/)
 		GameInp[iJoyNum][11].pVal = bii.pVal;
 		GameInp[iJoyNum][11].nType = bii.nType;
     }}}}}}}}}}}}}}}}}}}
+#ifdef _HARMATTAN
+		}
+#endif
 
 #if 0
 if (pgi->pVal != NULL)
@@ -416,6 +432,12 @@ int InpMake(unsigned int key[])
                         *(GameInp[joyNum][i].pShortVal)=nJoy;
 					}
 
+#ifdef _HARMATTAN
+					if (i == 18)
+					{
+                        if (down) *(GameInp[joyNum][i].pVal)=0xff; else *(GameInp[joyNum][i].pVal)=0x01;
+					}
+#endif
 				}
 				else
 				{
@@ -437,6 +459,174 @@ int InpMake(unsigned int key[])
 	}
 	return 0;
 }
+
+#ifdef _HARMATTAN
+// Set DIP, like (name = "BIOS", value = "AES Asia") to make HOME mode.
+int harm_set_DIP(const char *name, const char *value)
+{
+#define KZ_SET_DIP_STATE_MISSING_PARAMS 0
+#define KZ_SET_DIP_STATE_FINDING 0
+#define KZ_SET_DIP_STATE_FOUND 1
+#define KZ_SET_DIP_STATE_HAS_SET 2
+#define KZ_SET_DIP_STATE_NOT_SET 3
+	struct BurnDIPInfo bdi;
+	int nDIPOffset;
+
+	struct GameInp* pgi;
+	int i;
+	int state;
+	const char *pDIPGroup;
+
+	if(!name || !value)
+		return KZ_SET_DIP_STATE_MISSING_PARAMS;
+
+	//printf("%s->%s\n", name, value);
+	// get dip switch offset -> src/burner/win32/inpdipsw.cpp::InpDIPSWGetOffset()
+	nDIPOffset = 0;
+	for (i = 0; BurnDrvGetDIPInfo(&bdi, i) == 0; i++)
+	{
+		if (bdi.nFlags == 0xF0) {
+			nDIPOffset = bdi.nInput;
+			break;
+		}
+	}
+
+	// set DIP to setting -> src/burner/win32/inpdipsw.cpp::InpDIPSWListMake()
+	i = 0;
+	pDIPGroup = NULL;
+	state = KZ_SET_DIP_STATE_FINDING;
+	while (BurnDrvGetDIPInfo(&bdi, i) == 0) {
+		//printf("%2d. %02x '%s' | MASK/%d SETTING/%d/\n", bdi.nInput, bdi.nFlags, bdi.szText, bdi.nMask, bdi.nSetting);
+		if ((bdi.nFlags & 0xF0) == 0xF0) {
+			if (bdi.nFlags == 0xFE || bdi.nFlags == 0xFD) { // into a setting
+				pDIPGroup = bdi.szText;
+				if(pDIPGroup && strcmp(pDIPGroup, name) == 0)
+				{
+					state = KZ_SET_DIP_STATE_FOUND;
+					printf("[KZDebug]: DIP found -> %2d. 0x%02x '%s' MASK=%d SETTING=%d\n", bdi.nInput, bdi.nFlags, bdi.szText, bdi.nMask, bdi.nSetting);
+				}
+			}
+		} else {
+			if (state == KZ_SET_DIP_STATE_FOUND) {
+				if ( bdi.nFlags == 0x01 ) { // is a setting item
+					//printf("[KZDebug]: DIP setting item -> %2d. 0x%02x '%s' | MASK/%d SETTING/%d/\n", bdi.nInput, bdi.nFlags, bdi.szText, bdi.nMask, bdi.nSetting);
+					if(bdi.szText && strcmp(bdi.szText, value) == 0)
+					{
+						pgi = DIPInfo.DIPData + (bdi.nInput + nDIPOffset - DIPInfo.nFirstDIP);
+						pgi->nConst = (pgi->nConst & ~bdi.nMask) | (bdi.nSetting & bdi.nMask);
+
+						printf("[KZDebug]: Set DIP(%s) -> %d(%s)\n", pDIPGroup, bdi.nSetting, bdi.szText);
+						state = KZ_SET_DIP_STATE_HAS_SET;
+					}
+				}
+				else // flag is not 0x01, means to next setting.
+				{
+					state = KZ_SET_DIP_STATE_NOT_SET;
+					printf("[KZDebug]: DIP(%s) found, but setting item not found(%d)\n", pDIPGroup, value);
+				}
+			}
+		}
+
+		if(state == KZ_SET_DIP_STATE_HAS_SET || state == KZ_SET_DIP_STATE_NOT_SET)
+			break;
+
+		i++;
+	}
+
+	return state;
+#undef KZ_SET_DIP_STATE_MISSING_PARAMS
+#undef KZ_SET_DIP_STATE_FINDING
+#undef KZ_SET_DIP_STATE_FOUND
+#undef KZ_SET_DIP_STATE_HAS_SET
+#undef KZ_SET_DIP_STATE_NOT_SET
+}
+
+int harm_list_DIP(void)
+{
+	struct BurnDIPInfo bdi;
+	int nDIPOffset;
+
+	int index;
+	int i;
+	const char *pDIPGroup;
+
+	// get dip switch offset -> src/burner/win32/inpdipsw.cpp::InpDIPSWGetOffset()
+	nDIPOffset = 0;
+	for (i = 0; BurnDrvGetDIPInfo(&bdi, i) == 0; i++)
+	{
+		if (bdi.nFlags == 0xF0) {
+			nDIPOffset = bdi.nInput;
+			break;
+		}
+	}
+
+	printf("[KZDebug]: ******************* DIP list start... ******************\n");
+
+	// set DIP to setting -> src/burner/win32/inpdipsw.cpp::InpDIPSWListMake()
+	i = 0;
+	index = 0;
+	pDIPGroup = NULL;
+	while (BurnDrvGetDIPInfo(&bdi, i) == 0) {
+		//printf("%2d. %02x '%s' | MASK/%d SETTING/%d/\n", bdi.nInput, bdi.nFlags, bdi.szText, bdi.nMask, bdi.nSetting);
+		if ((bdi.nFlags & 0xF0) == 0xF0) {
+			if (bdi.nFlags == 0xFE || bdi.nFlags == 0xFD) { // into a setting
+				printf("|%d:\n", index);
+				printf("|- %s -> \n", bdi.szText, bdi.nInput, bdi.nFlags, bdi.nMask, bdi.nSetting);
+				//printf("|- %s [input=%2d., flag=0x%02x, mask=0x%x, setting=%d] -> \n", bdi.szText, bdi.nInput, bdi.nFlags, bdi.nMask, bdi.nSetting);
+				index++;
+			}
+		} else {
+			if ( bdi.nFlags == 0x01 ) { // is a setting item
+				printf("     |__ %s\n", bdi.szText, bdi.nInput, bdi.nFlags, bdi.nMask, bdi.nSetting);
+				//printf("     |__ %s (input=%2d., flag=0x%02x, mask=0x%x, setting=%d)\n", bdi.szText, bdi.nInput, bdi.nFlags, bdi.nMask, bdi.nSetting);
+			}
+		}
+
+		i++;
+	}
+
+	printf("[KZDebug]: ******************* DIP list end. ******************\n");
+
+	return index;
+}
+
+extern KZ_GetOpt_t harm_options;
+static void harm_set_FBA_DIP()
+{
+#define _DIP_SETTING_SPLIT ","
+	char *ptr;
+	char *p;
+	char *value;
+
+	harm_list_DIP();
+
+	if(harm_options.dip_setting)
+	{
+		ptr = strdup(harm_options.dip_setting);
+		p = ptr;
+		while((p = strtok(p, _DIP_SETTING_SPLIT)) != NULL)
+		{
+			value = strchr(p, '=');
+			if(value)
+			{
+				*value = '\0';
+				value++;
+				if(strlen(p) && strlen(value))
+				{
+					harm_set_DIP(p, value);
+					//printf("%s -> %s\n", p, value);
+				}
+			}
+			p = NULL;
+		}
+		free(ptr);
+	}
+	
+	if(harm_options.BIOS) // TODO
+		harm_set_DIP("BIOS", harm_options.BIOS);
+#undef _DIP_SETTING_SPLIT
+}
+#endif
 
 extern int GameScreenMode;
 
@@ -489,6 +679,11 @@ void InpDIP()
 		}
 		i++;
 	}
+
+#ifdef _HARMATTAN
+	harm_set_FBA_DIP();
+#endif
+
 	for (i=0,pgi=DIPInfo.DIPData; i<(int)DIPInfo.nDIP; i++,pgi++) {
 		if (pgi->pVal == NULL)
 			continue;

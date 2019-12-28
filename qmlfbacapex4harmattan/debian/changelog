@@ -1,0 +1,27 @@
+qmlfbacapex4harmattan (0.5.1harmattan1) unstable; urgency=low
+
+  * Add search rom name.
+  * Add more settings.
+  * Support set fba 1.0.8harmattan2014-7 arguments.
+  * Default rom list is available.
+
+ -- Karin Zhao <beyondk2000@gmail.com>  Thu, 06 Nov 2014 20:06:35 +0800
+
+qmlfbacapex4harmattan (0.3.1) unstable; urgency=low
+  * fixed about page chinese i18n.
+  * add quick search in rom list.
+  * fixed fba emulator command output page to flick.
+  * fixed audio sample rate slider value.
+
+ -- Karin Zhao <beyondk2000@gmail.com>  Thu, 06 Nov 2014 20:06:35 +0800
+
+qmlfbacapex4harmattan (0.2.1) unstable; urgency=low
+  * relased beta version.
+
+ -- Karin Zhao <beyondk2000@gmail.com>  Sun, 12 Oct 2014 16:25:40 +0800
+
+qmlfbacapex4harmattan (0.0.1) unstable; urgency=low
+
+  * Beta version.
+
+ -- Karin Zhao <beyondk2000@gmail.com>  Sun, 12 Oct 2014 14:22:32 +0800
